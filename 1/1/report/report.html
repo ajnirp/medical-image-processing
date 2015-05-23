@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Assignment 1 Question 1 Report</title>
+</head>
+<body>
+
+<h1>Question 1, Assignment 1, Medical Image Processing</h1>
+
+<h2>Team members</h2>
+<ol>
+	<li>Ashray Malhotra (11D070002)</li>
+	<li>Rohan Prinja (110050011)</li>
+</ol>
+
+<h2>Part (d)</h2>
+<p>
+If we choose a very small value for delta(t) and/or delta(theta), we would send a lot of samples, which means a lot of radiation. This prolongs the patient's exposure to radiation, which is to be avoided. Also, it increases the time and cost of the CT procedure. However, there is an upper bound to delta(t). When theta is 90 degrees, then a change in delta(t) is most likely to skip a pixel. So therefore delta(t) should not be more than the real-life width of a pixel in the region we are scanning. Otherwise, for theta = 90 degrees (or -90 degrees or 0 degrees or 180 degrees) we might end up skipping an entire line of pixels in the region we are scanning.
+</p>
+
+<h2>Part (e)</h2>
+<p>
+Choosing a very large value of delta(s) (relative to pixel width) will result in undersampling. There will be many blank patches in the reconstructed image. Analogously, choosing a very small value of delta(s) (relative to pixel width) will result in oversampling. The resultant image will be extremely bright.
+</p>
+</body>
+</html>

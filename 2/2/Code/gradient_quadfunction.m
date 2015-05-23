@@ -1,0 +1,2 @@
+function output = gradient_quadfunction(x_loop, imageNoisy, alpha)
+output = (1-alpha)*2*(x_loop-imageNoisy) + 2*alpha*(4*x_loop-circshift(x_loop,1,1)-circshift(x_loop,-1, 1)-circshift(x_loop, 1, 2)-circshift(x_loop, -1, 2));

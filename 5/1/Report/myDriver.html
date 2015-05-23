@@ -1,0 +1,156 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Statistical Shape Analysis</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-04-19"><meta name="DC.source" content="myDriver.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Statistical Shape Analysis</h1><p>First, we load the data: numOfPoints, numOfPointSets, pointSets</p><pre class="codeinput">clear <span class="string">all</span>;
+load <span class="string">'assignmentShapeAnalysis.mat'</span>;
+</pre><p>Plot the initial pointsets</p><pre class="codeinput">figure(1), plotAllSets(pointSets, <span class="string">'initial-pointset'</span>, <span class="string">'Initial set of points'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_01.png" alt=""> <p>Initial estimate for mean meanEstimate = pointSets(:,:,1);</p><pre class="codeinput">meanEstimate = estimateMean(pointSets);
+<span class="keyword">for</span> iter = 1:10
+    <span class="keyword">for</span> i = 1:300
+        pointSets(:,:,i) = align(pointSets(:,:,i), meanEstimate);
+    <span class="keyword">end</span>
+    meanEstimate = estimateMean(pointSets);
+<span class="comment">%     temp = align(meanEstimate, pointSets(:,:,1));</span>
+<span class="comment">%     meanEstimate = temp;</span>
+<span class="keyword">end</span>
+figure(2), plotPointSet(estimateMean(pointSets), <span class="string">'Computed shape mean after convergence'</span>, <span class="string">'computed-shape-mean'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_02.png" alt=""> <p>Plot the pointsets after the alignment algorithm has converged</p><pre class="codeinput">figure(3), plotAllSets(pointSets, <span class="string">'converged-pointset'</span>, <span class="string">'Converged set of points'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_03.png" alt=""> <pre class="codeinput">meanReshaped = repmat(meanEstimate, [1 1 numOfPointSets]);
+shifted = pointSets - meanReshaped;
+transposed = permute(shifted, [2 1 3]);
+</pre><p>Eigendecompose the converged pointsets and obtain the modes of variation</p><pre class="codeinput">[V,D] = variationAnalysis(transposed);
+figure(4);
+eigvals = bar(diag(D));
+title(<span class="string">'Eigenvalues of the covariance matrix, in sorted order'</span>),
+saveas(eigvals, <span class="string">'../Images/eigenvalues'</span>, <span class="string">'png'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_04.png" alt=""> <p>Observe the variations along different modes</p><pre class="codeinput">shape1 = reconstructShape(meanEstimate, V, D, 1);
+shape2 = reconstructShape(meanEstimate, V, D, 2);
+shape3 = reconstructShape(meanEstimate, V, D, 3);
+shape4 = reconstructShape(meanEstimate, V, D, 4);
+shape5 = reconstructShape(meanEstimate, V, D, 5);
+</pre><p>Plot the variations and write them to disk</p><pre class="codeinput">figure(5), plotAllSets(shape1, strcat(<span class="string">'mode'</span>, int2str(1)), <span class="string">'Variation of mean shape along mode 1'</span>);
+figure(6), plotAllSets(shape2, strcat(<span class="string">'mode'</span>, int2str(2)), <span class="string">'Variation of mean shape along mode 2'</span>);
+figure(7), plotAllSets(shape3, strcat(<span class="string">'mode'</span>, int2str(3)), <span class="string">'Variation of mean shape along mode 3'</span>);
+figure(8), plotAllSets(shape4, strcat(<span class="string">'mode'</span>, int2str(4)), <span class="string">'Variation of mean shape along mode 4'</span>);
+figure(9), plotAllSets(shape5, strcat(<span class="string">'mode'</span>, int2str(5)), <span class="string">'Variation of mean shape along mode 5'</span>);
+<span class="comment">% close all</span>
+</pre><img vspace="5" hspace="5" src="myDriver_05.png" alt=""> <img vspace="5" hspace="5" src="myDriver_06.png" alt=""> <img vspace="5" hspace="5" src="myDriver_07.png" alt=""> <img vspace="5" hspace="5" src="myDriver_08.png" alt=""> <img vspace="5" hspace="5" src="myDriver_09.png" alt=""> <p>diag(D)'</p><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Statistical Shape Analysis
+% First, we load the data: numOfPoints, numOfPointSets, pointSets
+clear all;
+load 'assignmentShapeAnalysis.mat';
+%%
+% Plot the initial pointsets
+figure(1), plotAllSets(pointSets, 'initial-pointset', 'Initial set of points');
+%%
+% Initial estimate for mean
+% meanEstimate = pointSets(:,:,1);
+meanEstimate = estimateMean(pointSets);
+for iter = 1:10
+    for i = 1:300
+        pointSets(:,:,i) = align(pointSets(:,:,i), meanEstimate);
+    end
+    meanEstimate = estimateMean(pointSets);
+%     temp = align(meanEstimate, pointSets(:,:,1));
+%     meanEstimate = temp;
+end
+figure(2), plotPointSet(estimateMean(pointSets), 'Computed shape mean after convergence', 'computed-shape-mean');
+%%
+% Plot the pointsets after the alignment algorithm has converged
+figure(3), plotAllSets(pointSets, 'converged-pointset', 'Converged set of points');
+%%
+meanReshaped = repmat(meanEstimate, [1 1 numOfPointSets]);
+shifted = pointSets - meanReshaped;
+transposed = permute(shifted, [2 1 3]);
+%%
+% Eigendecompose the converged pointsets and obtain the modes of variation
+[V,D] = variationAnalysis(transposed);
+figure(4);
+eigvals = bar(diag(D));
+title('Eigenvalues of the covariance matrix, in sorted order'), 
+saveas(eigvals, '../Images/eigenvalues', 'png');
+%%
+% Observe the variations along different modes
+shape1 = reconstructShape(meanEstimate, V, D, 1);
+shape2 = reconstructShape(meanEstimate, V, D, 2);
+shape3 = reconstructShape(meanEstimate, V, D, 3);
+shape4 = reconstructShape(meanEstimate, V, D, 4);
+shape5 = reconstructShape(meanEstimate, V, D, 5);
+%%
+% Plot the variations and write them to disk
+figure(5), plotAllSets(shape1, strcat('mode', int2str(1)), 'Variation of mean shape along mode 1');
+figure(6), plotAllSets(shape2, strcat('mode', int2str(2)), 'Variation of mean shape along mode 2');
+figure(7), plotAllSets(shape3, strcat('mode', int2str(3)), 'Variation of mean shape along mode 3');
+figure(8), plotAllSets(shape4, strcat('mode', int2str(4)), 'Variation of mean shape along mode 4');
+figure(9), plotAllSets(shape5, strcat('mode', int2str(5)), 'Variation of mean shape along mode 5');
+% close all
+%%
+% diag(D)'
+##### SOURCE END #####
+--></body></html>

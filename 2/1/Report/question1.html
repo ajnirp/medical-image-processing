@@ -1,0 +1,432 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>question1</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-03-21"><meta name="DC.source" content="question1.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Denoising a Phantom Magnetic Resonance Image - Quadratic Prior</a></li><li><a href="#7">Denoising a Phantom Magnetic Resonance Image - Huber function</a></li><li><a href="#10">Denoising a Phantom Magnetic Resonance Image - Discontinuity Adaptive Function</a></li></ul></div><h2>Denoising a Phantom Magnetic Resonance Image - Quadratic Prior<a name="1"></a></h2><p>We want to denoise the image using Bayesian image-denoising algorithm that uses a noise model coupled with a MRF prior that uses a 4-neighbor neighborhood system</p><pre class="codeinput">clear <span class="string">all</span>
+load(<span class="string">'assignmentImageDenoisingPhantom.mat'</span>);
+alpha = 0.5;
+tow = 0.1;
+
+x_old = imageNoisy;
+iteration_count = 1;
+alpha = 0.05:0.05:0.95;
+find_optimal_alpha_matrix = [inf, inf];
+optim_fn_iteration_variation = [inf, inf];
+<span class="keyword">for</span> alpha = 0.22
+    tow = 0.1;
+    x_old = imageNoisy;
+    iteration_count = 1;
+    <span class="keyword">while</span>(tow&gt;0.01)
+        g_x_old = gradient_quadfunction(x_old, imageNoisy, alpha);
+        x = x_old - tow*g_x_old;
+        g_x_new = gradient_quadfunction(x, imageNoisy, alpha);
+        <span class="keyword">if</span>(sum(sum((abs(g_x_old)&gt;abs(g_x_new)))) &gt; sum(sum((abs(g_x_old)&lt;abs(g_x_new)))))
+            tow = 1.1*tow;
+            x_old = x;
+        <span class="keyword">else</span>
+            tow = 0.5*tow;
+            x = x_old;
+        <span class="keyword">end</span>
+        optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+        iteration_count = iteration_count + 1;
+    <span class="keyword">end</span>
+    find_optimal_alpha_matrix = [find_optimal_alpha_matrix; [alpha, RRMSE(imageNoiseless, x)]];
+    fprintf(<span class="string">'Number of iterations the gradient descent ran was %f \n'</span>, iteration_count);
+<span class="keyword">end</span>
+figure();
+quad_denoised = x;
+imshow(abs(x))
+title(<span class="string">'Best denoised image using quadratic prior'</span>)
+</pre><pre class="codeoutput">Number of iterations the gradient descent ran was 73.000000 
+</pre><img vspace="5" hspace="5" src="question1_01.png" alt=""> <pre class="codeinput">figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title(<span class="string">'Variation of optimality criteria quadratic prior(derivative of MAP)'</span>)
+xlabel(<span class="string">'Number of iterations'</span>)
+ylabel(<span class="string">'Value of optimality critera(that we want to minimise'</span>)
+</pre><img vspace="5" hspace="5" src="question1_02.png" alt=""> <p>We can verify from above that the optimal value of alpha is 0.22, for RRMSE equal to 0.210</p><p>For alpha = 0.264, RRMSE = 0.212 For alpha = 0.176, RRMSE = 0.2119</p><pre class="language-matlab"><span class="keyword">function</span> output = gradient_quadfunction(x_loop, imageNoisy, alpha)
+output = (1-alpha)*2*(x_loop-imageNoisy) + 2*alpha*(4*x_loop-circshift(x_loop,1,1)-circshift(x_loop,-1, 1)-circshift(x_loop, 1, 2)-circshift(x_loop, -1, 2));
+</pre><pre class="language-matlab"><span class="keyword">function</span> output_value = RRMSE(image1, image2)
+output_value = (sqrt((sum(sum(((abs(image1)-abs(image2)).^2))))))/(sqrt(sum(sum(abs(image1).^2))));
+</pre><p>RRMSE of noiseless and noisy image is 0.2986.</p><h2>Denoising a Phantom Magnetic Resonance Image - Huber function<a name="7"></a></h2><p>We want to denoise the image using Bayesian image-denoising algorithm that uses a noise model coupled with a MRF prior that uses a 4-neighbor neighborhood system clear all</p><pre class="codeinput">load(<span class="string">'assignmentImageDenoisingPhantom.mat'</span>);
+alpha = 0.5;
+tow = 0.1;
+gamma = 1;
+x_old = imageNoisy;
+iteration_count = 1;
+alpha = 0.05:0.05:0.95;
+find_optimal_alpha_matrix = [inf, inf, inf];
+optim_fn_iteration_variation = [inf, inf];
+<span class="keyword">for</span> gamma = 0.01
+    <span class="keyword">for</span> alpha = 0.9
+        tow = 0.1;
+        x_old = imageNoisy;
+        iteration_count = 1;
+        <span class="keyword">while</span>(tow&gt;0.01)
+            g_x_old = gradient_adaptive_huber(x_old, imageNoisy, alpha, gamma);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_huber(x, imageNoisy, alpha, gamma);
+            <span class="keyword">if</span>(sum(sum(abs(g_x_old))) &gt; (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            <span class="keyword">else</span>
+                tow = 0.5*tow;
+                x = x_old;
+            <span class="keyword">end</span>
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            iteration_count = iteration_count + 1;
+        <span class="keyword">end</span>
+        find_optimal_alpha_matrix = [find_optimal_alpha_matrix; [alpha,gamma, RRMSE(imageNoiseless, x)]];
+        fprintf(<span class="string">'Number of iterations the gradient descent ran was %f \n'</span>, iteration_count);
+        RRMSE(imageNoiseless, x)
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+figure();
+huber_denoised = x;
+imshow(abs(x))
+title(<span class="string">'Best denoised image using huber prior'</span>)
+</pre><pre class="codeoutput">Number of iterations the gradient descent ran was 701.000000 
+
+ans =
+
+    0.0662
+
+</pre><img vspace="5" hspace="5" src="question1_03.png" alt=""> <pre class="codeinput">figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title(<span class="string">'Variation of optimality criteria huber prior(derivative of MAP)'</span>)
+xlabel(<span class="string">'Number of iterations'</span>)
+ylabel(<span class="string">'Value of optimality critera(that we want to minimise'</span>)
+</pre><img vspace="5" hspace="5" src="question1_04.png" alt=""> <p>We can verify from above that the optimal value of alpha is 0.9, gamma is 0.01, for RRMSE equal to 0.0662</p><p>For alpha = 0.9, gamma = 0.01, RRMSE = 0.0662</p><p>For alpha = 1, gamma = 0.01, RRMSE = 0.8112</p><p>For alpha = 0.72, gamma = 0.01, RRMSE = 0.1949</p><p>For alpha = 0.9, gamma = 0.012, RRMSE = 0.0703</p><p>For alpha = 0.9, gamma = 0.008, RRMSE = 0.0787</p><h2>Denoising a Phantom Magnetic Resonance Image - Discontinuity Adaptive Function<a name="10"></a></h2><p>We want to denoise the image using Bayesian image-denoising algorithm that uses a noise model coupled with a MRF prior that uses a 4-neighbor neighborhood system clear all</p><pre class="codeinput">load(<span class="string">'assignmentImageDenoisingPhantom.mat'</span>);
+alpha = 0.5;
+tow = 0.1;
+gamma = 1;
+x_old = imageNoisy;
+iteration_count = 1;
+alpha = 0.05:0.05:0.95;
+find_optimal_alpha_matrix = [inf, inf, inf];
+optim_fn_iteration_variation = [inf, inf];
+<span class="keyword">for</span> gamma = 0.015
+    <span class="keyword">for</span> alpha = 0.9
+        tow = 5;
+        x_old = imageNoisy;
+        iteration_count = 1;
+        RRMSE_new = 10;
+        RRMSE_old = 5;
+        <span class="keyword">while</span>(tow&gt;0.01 &amp;&amp; abs(RRMSE_new - RRMSE_old)&gt;(0.0001*RRMSE_new))
+            g_x_old = gradient_adaptive_disc_adaptive_function(x_old, imageNoisy, alpha, gamma);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_disc_adaptive_function(x, imageNoisy, alpha, gamma);
+            RRMSE_old = RRMSE(imageNoiseless, x_old);
+            <span class="keyword">if</span>(sum(sum(abs(g_x_old))) &gt; (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            <span class="keyword">else</span>
+                tow = 0.5*tow;
+                x_old = x;
+            <span class="keyword">end</span>
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            figure(1);
+            iteration_count = iteration_count + 1;
+            RRMSE_new = RRMSE(imageNoiseless, x);
+        <span class="keyword">end</span>
+        find_optimal_alpha_matrix = [find_optimal_alpha_matrix; [alpha,gamma, RRMSE(imageNoiseless, x)]];
+        fprintf(<span class="string">'Number of iterations the gradient descent ran was %f \n'</span>, iteration_count);
+                RRMSE(imageNoiseless, x)
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+adap_denoised = x;
+figure();
+imshow(abs(x))
+title(<span class="string">'Best denoised image using discontinuity adaptive prior'</span>)
+</pre><pre class="codeoutput">Number of iterations the gradient descent ran was 47.000000 
+
+ans =
+
+    0.0854
+
+</pre><img vspace="5" hspace="5" src="question1_05.png" alt=""> <pre class="codeinput">figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title(<span class="string">'Variation of optimality criteria discontinuity adaptive prior(derivative of MAP)'</span>)
+xlabel(<span class="string">'Number of iterations'</span>)
+ylabel(<span class="string">'Value of optimality critera(that we want to minimise'</span>)
+</pre><img vspace="5" hspace="5" src="question1_06.png" alt=""> <p>We can verify from above that the optimal value of alpha is 0.9, gamma is 0.015, for RRMSE equal to 0.0854</p><p>For alpha = 0.9, gamma = 0.015, RRMSE = 0.0854</p><p>For alpha = 0.99, gamma = 0.015, RRMSE = 0.3767</p><p>For alpha = 0.72, gamma = 0.015, RRMSE = 0.1775</p><p>For alpha = 0.9, gamma = 0.018, RRMSE = 0.0873</p><p>For alpha = 0.9, gamma = 0.012, RRMSE = 0.0875</p><p>figure();</p><pre class="codeinput">figure(<span class="string">'units'</span>,<span class="string">'normalized'</span>,<span class="string">'outerposition'</span>,[0 0 1 1])
+title(<span class="string">'All images compared'</span>)
+subplot(1,5,1), imshow(abs(imageNoisy)), title(<span class="string">'Noisy Image'</span>)
+subplot(1,5,2), imshow(abs(quad_denoised)), title(<span class="string">'Denoised using Quadratic prior'</span>)
+subplot(1,5,3), imshow(abs(huber_denoised)), title(<span class="string">'Denoised using Huber prior'</span>)
+subplot(1,5,4), imshow(abs(adap_denoised)), title(<span class="string">'Denoised using Adaptive Function prior'</span>)
+subplot(1,5,5), imshow(abs(imageNoiseless)), title(<span class="string">'Noiseless Image'</span>), colorbar
+</pre><img vspace="5" hspace="5" src="question1_07.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Denoising a Phantom Magnetic Resonance Image - Quadratic Prior
+% We want to denoise the image using Bayesian image-denoising algorithm
+% that uses a noise model coupled with a MRF prior that uses a 4-neighbor
+% neighborhood system
+clear all
+load('assignmentImageDenoisingPhantom.mat');
+alpha = 0.5;
+tow = 0.1;
+
+x_old = imageNoisy;
+iteration_count = 1;
+alpha = 0.05:0.05:0.95;
+find_optimal_alpha_matrix = [inf, inf];
+optim_fn_iteration_variation = [inf, inf];
+for alpha = 0.22
+    tow = 0.1;
+    x_old = imageNoisy;
+    iteration_count = 1;
+    while(tow>0.01)
+        g_x_old = gradient_quadfunction(x_old, imageNoisy, alpha);
+        x = x_old - tow*g_x_old;
+        g_x_new = gradient_quadfunction(x, imageNoisy, alpha);
+        if(sum(sum((abs(g_x_old)>abs(g_x_new)))) > sum(sum((abs(g_x_old)<abs(g_x_new)))))
+            tow = 1.1*tow;
+            x_old = x;
+        else
+            tow = 0.5*tow;
+            x = x_old;
+        end
+        optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+        iteration_count = iteration_count + 1;
+    end
+    find_optimal_alpha_matrix = [find_optimal_alpha_matrix; [alpha, RRMSE(imageNoiseless, x)]];
+    fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);
+end
+figure();
+quad_denoised = x;
+imshow(abs(x))
+title('Best denoised image using quadratic prior')
+%%
+figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title('Variation of optimality criteria quadratic prior(derivative of MAP)')
+xlabel('Number of iterations')
+ylabel('Value of optimality critera(that we want to minimise')
+%%
+% We can verify from above that the optimal value of alpha is 0.22, for
+% RRMSE equal to 0.210
+%
+% For alpha = 0.264, RRMSE = 0.212
+% For alpha = 0.176, RRMSE = 0.2119
+
+%%
+% 
+%   function output = gradient_quadfunction(x_loop, imageNoisy, alpha)
+%   output = (1-alpha)*2*(x_loop-imageNoisy) + 2*alpha*(4*x_loop-circshift(x_loop,1,1)-circshift(x_loop,-1, 1)-circshift(x_loop, 1, 2)-circshift(x_loop, -1, 2));
+% 
+
+%%
+% 
+%   function output_value = RRMSE(image1, image2)
+%   output_value = (sqrt((sum(sum(((abs(image1)-abs(image2)).^2))))))/(sqrt(sum(sum(abs(image1).^2))));
+% 
+%%
+% RRMSE of noiseless and noisy image is 0.2986.
+
+%% Denoising a Phantom Magnetic Resonance Image - Huber function
+% We want to denoise the image using Bayesian image-denoising algorithm
+% that uses a noise model coupled with a MRF prior that uses a 4-neighbor
+% neighborhood system
+% clear all
+load('assignmentImageDenoisingPhantom.mat');
+alpha = 0.5;
+tow = 0.1;
+gamma = 1;
+x_old = imageNoisy;
+iteration_count = 1;
+alpha = 0.05:0.05:0.95;
+find_optimal_alpha_matrix = [inf, inf, inf];
+optim_fn_iteration_variation = [inf, inf];
+for gamma = 0.01
+    for alpha = 0.9
+        tow = 0.1;
+        x_old = imageNoisy;
+        iteration_count = 1;
+        while(tow>0.01)
+            g_x_old = gradient_adaptive_huber(x_old, imageNoisy, alpha, gamma);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_huber(x, imageNoisy, alpha, gamma);
+            if(sum(sum(abs(g_x_old))) > (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            else
+                tow = 0.5*tow;
+                x = x_old;
+            end
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            iteration_count = iteration_count + 1;
+        end
+        find_optimal_alpha_matrix = [find_optimal_alpha_matrix; [alpha,gamma, RRMSE(imageNoiseless, x)]];
+        fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);
+        RRMSE(imageNoiseless, x)
+    end
+end
+figure();
+huber_denoised = x;
+imshow(abs(x))
+title('Best denoised image using huber prior')
+%%
+figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title('Variation of optimality criteria huber prior(derivative of MAP)')
+xlabel('Number of iterations')
+ylabel('Value of optimality critera(that we want to minimise')
+%%
+% We can verify from above that the optimal value of alpha is 0.9, gamma is
+% 0.01, for RRMSE equal to 0.0662
+%
+% For alpha = 0.9, gamma = 0.01, RRMSE = 0.0662
+%
+% For alpha = 1, gamma = 0.01, RRMSE = 0.8112
+%
+% For alpha = 0.72, gamma = 0.01, RRMSE = 0.1949
+%
+% For alpha = 0.9, gamma = 0.012, RRMSE = 0.0703
+%
+% For alpha = 0.9, gamma = 0.008, RRMSE = 0.0787
+%
+
+%% Denoising a Phantom Magnetic Resonance Image - Discontinuity Adaptive Function
+% We want to denoise the image using Bayesian image-denoising algorithm
+% that uses a noise model coupled with a MRF prior that uses a 4-neighbor
+% neighborhood system
+% clear all
+load('assignmentImageDenoisingPhantom.mat');
+alpha = 0.5;
+tow = 0.1;
+gamma = 1;
+x_old = imageNoisy;
+iteration_count = 1;
+alpha = 0.05:0.05:0.95;
+find_optimal_alpha_matrix = [inf, inf, inf];
+optim_fn_iteration_variation = [inf, inf];
+for gamma = 0.015
+    for alpha = 0.9
+        tow = 5;
+        x_old = imageNoisy;
+        iteration_count = 1;
+        RRMSE_new = 10;
+        RRMSE_old = 5;
+        while(tow>0.01 && abs(RRMSE_new - RRMSE_old)>(0.0001*RRMSE_new))
+            g_x_old = gradient_adaptive_disc_adaptive_function(x_old, imageNoisy, alpha, gamma);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_disc_adaptive_function(x, imageNoisy, alpha, gamma);
+            RRMSE_old = RRMSE(imageNoiseless, x_old);
+            if(sum(sum(abs(g_x_old))) > (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            else
+                tow = 0.5*tow;
+                x_old = x;
+            end
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            figure(1);
+            iteration_count = iteration_count + 1;
+            RRMSE_new = RRMSE(imageNoiseless, x);
+        end
+        find_optimal_alpha_matrix = [find_optimal_alpha_matrix; [alpha,gamma, RRMSE(imageNoiseless, x)]];
+        fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);
+                RRMSE(imageNoiseless, x)
+    end
+end
+adap_denoised = x;
+figure();
+imshow(abs(x))
+title('Best denoised image using discontinuity adaptive prior')
+%%
+figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title('Variation of optimality criteria discontinuity adaptive prior(derivative of MAP)')
+xlabel('Number of iterations')
+ylabel('Value of optimality critera(that we want to minimise')
+
+%%
+% We can verify from above that the optimal value of alpha is 0.9, gamma is
+% 0.015, for RRMSE equal to 0.0854
+%
+% For alpha = 0.9, gamma = 0.015, RRMSE = 0.0854
+%
+% For alpha = 0.99, gamma = 0.015, RRMSE = 0.3767
+%
+% For alpha = 0.72, gamma = 0.015, RRMSE = 0.1775
+%
+% For alpha = 0.9, gamma = 0.018, RRMSE = 0.0873
+%
+% For alpha = 0.9, gamma = 0.012, RRMSE = 0.0875
+%
+
+%%
+% figure();
+figure('units','normalized','outerposition',[0 0 1 1])
+title('All images compared')
+subplot(1,5,1), imshow(abs(imageNoisy)), title('Noisy Image')
+subplot(1,5,2), imshow(abs(quad_denoised)), title('Denoised using Quadratic prior')
+subplot(1,5,3), imshow(abs(huber_denoised)), title('Denoised using Huber prior')
+subplot(1,5,4), imshow(abs(adap_denoised)), title('Denoised using Adaptive Function prior')
+subplot(1,5,5), imshow(abs(imageNoiseless)), title('Noiseless Image'), colorbar
+##### SOURCE END #####
+--></body></html>

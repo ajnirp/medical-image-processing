@@ -1,0 +1,312 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>myDriver</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-03-28"><meta name="DC.source" content="myDriver.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Reconstructing a Brain Magnetic Resonance Image - Quadratic Prior</a></li><li><a href="#4">Reconstructing a Brain Magnetic Resonance Image - Huber Prior</a></li><li><a href="#7">Reconstructing a Brain Magnetic Resonance Image - Discontinuity Adaptive Prior</a></li></ul></div><h2>Reconstructing a Brain Magnetic Resonance Image - Quadratic Prior<a name="1"></a></h2><p>We want to reconstruct the image using Bayesian image-denoising algorithm that uses a noise model coupled with a MRF prior that uses a 4-neighbor neighborhood system</p><pre class="codeinput">clear <span class="string">all</span>
+load(<span class="string">'assignmentImageReconstructionBrain.mat'</span>);
+optim_fn_iteration_variation = [inf, inf];
+<span class="keyword">for</span> alpha = 0.001
+    tow = 0.1;
+    x_old = ifft2(imageKspaceData);
+    iteration_count = 1;
+    <span class="keyword">while</span>(tow&gt;0.01 &amp;&amp; iteration_count &lt;= 150)
+        g_x_old = gradient_quadfunction(x_old, imageKspaceData, alpha, imageKspaceMask);
+        x = x_old - tow*g_x_old;
+        g_x_new = gradient_quadfunction(x, imageKspaceData, alpha, imageKspaceMask);
+        <span class="keyword">if</span>(sum(sum((abs(g_x_old)&gt;abs(g_x_new)))) &gt; sum(sum((abs(g_x_old)&lt;abs(g_x_new)))))
+            tow = 1.1*tow;
+            x_old = x;
+        <span class="keyword">else</span>
+            tow = 0.5*tow;
+            x = x_old;
+        <span class="keyword">end</span>
+        optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+        iteration_count = iteration_count + 1;
+    <span class="keyword">end</span>
+    imwrite(abs(x), strcat(<span class="string">'../Images/quad-prior-'</span>, num2str(alpha), <span class="string">'.png'</span>), <span class="string">'png'</span>);
+<span class="comment">%     fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);</span>
+<span class="keyword">end</span>
+quad_reconstructed = x;
+</pre><p>We can verify from visual inspection that the optimal value of alpha is 0.001</p><pre class="codeinput">h=figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title(<span class="string">'Variation of optimality criteria quadratic prior(derivative of MAP)'</span>)
+xlabel(<span class="string">'Number of iterations'</span>)
+ylabel(<span class="string">'Value of optimality critera(that we want to minimise'</span>)
+saveas(h,<span class="string">'../Images/quad-prior-plot'</span>,<span class="string">'png'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_01.png" alt=""> <h2>Reconstructing a Brain Magnetic Resonance Image - Huber Prior<a name="4"></a></h2><p>We want to reconstruct the image using Bayesian image-denoising algorithm that uses a noise model coupled with a MRF prior that uses a 4-neighbor neighborhood system clear all</p><pre class="codeinput">load(<span class="string">'assignmentImageReconstructionBrain.mat'</span>);
+optim_fn_iteration_variation = [inf, inf];
+<span class="keyword">for</span> alpha = 0.001
+    <span class="keyword">for</span> gamma = 0.1
+        tow = 0.1;
+        x_old = ifft2(imageKspaceData);
+        iteration_count = 1;
+        <span class="keyword">while</span>(tow&gt;0.01 &amp;&amp; iteration_count &lt;= 150)
+            g_x_old = gradient_adaptive_huber(x_old, imageKspaceData, alpha, gamma, imageKspaceMask);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_huber(x, imageKspaceData, alpha, gamma, imageKspaceMask);
+            <span class="keyword">if</span>(sum(sum(abs(g_x_old))) &gt; (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            <span class="keyword">else</span>
+                tow = 0.5*tow;
+                x = x_old;
+            <span class="keyword">end</span>
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            iteration_count = iteration_count + 1;
+        <span class="keyword">end</span>
+        imwrite(abs(x), strcat(<span class="string">'../Images/huber-prior-'</span>, num2str(gamma), num2str(alpha), <span class="string">'.png'</span>), <span class="string">'png'</span>);
+        fprintf(<span class="string">'Number of iterations the gradient descent ran was %f \n'</span>, iteration_count);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+huber_reconstructed = x;
+</pre><pre class="codeoutput">Number of iterations the gradient descent ran was 86.000000 
+</pre><p>We can verify from visual inspection that the optimal value of alpha is 0.001 and for gammma it is 0.1. Actually, the precise value of gamma does not seem to have any perceptible effect on the quality of the image. The major contribution comes from the alpha parameter.</p><pre class="codeinput">h=figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title(<span class="string">'Variation of optimality criteria huber prior(derivative of MAP)'</span>)
+xlabel(<span class="string">'Number of iterations'</span>)
+ylabel(<span class="string">'Value of optimality critera(that we want to minimise'</span>)
+saveas(h,<span class="string">'../Images/huber-prior-plot'</span>,<span class="string">'png'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_02.png" alt=""> <h2>Reconstructing a Brain Magnetic Resonance Image - Discontinuity Adaptive Prior<a name="7"></a></h2><p>We want to reconstruct the image using Bayesian image-denoising algorithm that uses a noise model coupled with a MRF prior that uses a 4-neighbor neighborhood system clear all</p><pre class="codeinput">load(<span class="string">'assignmentImageReconstructionBrain.mat'</span>);
+optim_fn_iteration_variation = [inf, inf];
+<span class="keyword">for</span> alpha = 0.001
+    <span class="keyword">for</span> gamma = 0.1
+        tow = 0.1;
+        x_old = ifft2(imageKspaceData);
+        iteration_count = 1;
+        <span class="keyword">while</span>(tow&gt;0.01 &amp;&amp; iteration_count &lt;= 150)
+            g_x_old = gradient_adaptive_disc_adaptive_function(x_old, imageKspaceData, alpha, gamma, imageKspaceMask);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_disc_adaptive_function(x, imageKspaceData, alpha, gamma, imageKspaceMask);
+            <span class="keyword">if</span>(sum(sum(abs(g_x_old))) &gt; (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            <span class="keyword">else</span>
+                tow = 0.5*tow;
+                x = x_old;
+            <span class="keyword">end</span>
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            iteration_count = iteration_count + 1;
+        <span class="keyword">end</span>
+        imwrite(abs(x), strcat(<span class="string">'../Images/adap-prior-'</span>, num2str(gamma), num2str(alpha), <span class="string">'.png'</span>), <span class="string">'png'</span>);
+        fprintf(<span class="string">'Number of iterations the gradient descent ran was %f \n'</span>, iteration_count);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+adap_reconstructed = x;
+</pre><pre class="codeoutput">Number of iterations the gradient descent ran was 151.000000 
+</pre><p>We can verify from visual inspection that the optimal value of alpha is 0.001 and for gammma it is 0.1. As above, gamma does not really affect the quality of the reconstructed image, and the major contributor is the alpha parameter.</p><pre class="codeinput">h=figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title(<span class="string">'Variation of optimality criteria discontinuity adaptive prior(derivative of MAP)'</span>)
+xlabel(<span class="string">'Number of iterations'</span>)
+ylabel(<span class="string">'Value of optimality critera(that we want to minimise'</span>)
+saveas(h,<span class="string">'../Images/adap-prior-plot'</span>,<span class="string">'png'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_03.png" alt=""> <pre class="codeinput">h=figure(<span class="string">'units'</span>,<span class="string">'normalized'</span>,<span class="string">'outerposition'</span>,[0 0 1 1]);
+title(<span class="string">'All images compared'</span>)
+subplot(1,5,1), imshow(ifft2(imageKspaceData)), title(<span class="string">'Inverse Fourier transform of data'</span>)
+subplot(1,5,2), imshow(abs(quad_reconstructed)), title(<span class="string">'Reconstructed using Quadratic prior'</span>)
+subplot(1,5,3), imshow(abs(huber_reconstructed)), title(<span class="string">'Reconstructed using Huber prior'</span>)
+subplot(1,5,4), imshow(abs(adap_reconstructed)), title(<span class="string">'Reconstructed using Adaptive Function prior'</span>)
+subplot(1,5,5), colorbar
+saveas(h,<span class="string">'../Images/combined'</span>,<span class="string">'png'</span>);
+</pre><pre class="codeoutput">Warning: Displaying real part of complex input. 
+</pre><img vspace="5" hspace="5" src="myDriver_04.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Reconstructing a Brain Magnetic Resonance Image - Quadratic Prior
+% We want to reconstruct the image using Bayesian image-denoising algorithm
+% that uses a noise model coupled with a MRF prior that uses a 4-neighbor
+% neighborhood system
+clear all
+load('assignmentImageReconstructionBrain.mat');
+optim_fn_iteration_variation = [inf, inf];
+for alpha = 0.001
+    tow = 0.1;
+    x_old = ifft2(imageKspaceData);
+    iteration_count = 1;
+    while(tow>0.01 && iteration_count <= 150)
+        g_x_old = gradient_quadfunction(x_old, imageKspaceData, alpha, imageKspaceMask);
+        x = x_old - tow*g_x_old;
+        g_x_new = gradient_quadfunction(x, imageKspaceData, alpha, imageKspaceMask);
+        if(sum(sum((abs(g_x_old)>abs(g_x_new)))) > sum(sum((abs(g_x_old)<abs(g_x_new)))))
+            tow = 1.1*tow;
+            x_old = x;
+        else
+            tow = 0.5*tow;
+            x = x_old;
+        end
+        optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+        iteration_count = iteration_count + 1;
+    end
+    imwrite(abs(x), strcat('../Images/quad-prior-', num2str(alpha), '.png'), 'png');
+%     fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);
+end
+quad_reconstructed = x;
+%%
+% We can verify from visual inspection that the optimal value of alpha is
+% 0.001
+%%
+h=figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title('Variation of optimality criteria quadratic prior(derivative of MAP)')
+xlabel('Number of iterations')
+ylabel('Value of optimality critera(that we want to minimise')
+saveas(h,'../Images/quad-prior-plot','png');
+%% Reconstructing a Brain Magnetic Resonance Image - Huber Prior
+% We want to reconstruct the image using Bayesian image-denoising algorithm
+% that uses a noise model coupled with a MRF prior that uses a 4-neighbor
+% neighborhood system
+% clear all
+load('assignmentImageReconstructionBrain.mat');
+optim_fn_iteration_variation = [inf, inf];
+for alpha = 0.001
+    for gamma = 0.1
+        tow = 0.1;
+        x_old = ifft2(imageKspaceData);
+        iteration_count = 1;
+        while(tow>0.01 && iteration_count <= 150)
+            g_x_old = gradient_adaptive_huber(x_old, imageKspaceData, alpha, gamma, imageKspaceMask);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_huber(x, imageKspaceData, alpha, gamma, imageKspaceMask);
+            if(sum(sum(abs(g_x_old))) > (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            else
+                tow = 0.5*tow;
+                x = x_old;
+            end
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            iteration_count = iteration_count + 1;
+        end
+        imwrite(abs(x), strcat('../Images/huber-prior-', num2str(gamma), num2str(alpha), '.png'), 'png');
+        fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);
+    end
+end
+huber_reconstructed = x;
+%%
+% We can verify from visual inspection that the optimal value of alpha is
+% 0.001 and for gammma it is 0.1. Actually, the precise value of gamma does
+% not seem to have any perceptible effect on the quality of the image. The
+% major contribution comes from the alpha parameter.
+%%
+h=figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title('Variation of optimality criteria huber prior(derivative of MAP)')
+xlabel('Number of iterations')
+ylabel('Value of optimality critera(that we want to minimise')
+saveas(h,'../Images/huber-prior-plot','png');
+%% Reconstructing a Brain Magnetic Resonance Image - Discontinuity Adaptive Prior
+% We want to reconstruct the image using Bayesian image-denoising algorithm
+% that uses a noise model coupled with a MRF prior that uses a 4-neighbor
+% neighborhood system
+% clear all
+load('assignmentImageReconstructionBrain.mat');
+optim_fn_iteration_variation = [inf, inf];
+for alpha = 0.001
+    for gamma = 0.1
+        tow = 0.1;
+        x_old = ifft2(imageKspaceData);
+        iteration_count = 1;
+        while(tow>0.01 && iteration_count <= 150)
+            g_x_old = gradient_adaptive_disc_adaptive_function(x_old, imageKspaceData, alpha, gamma, imageKspaceMask);
+            x = x_old - tow*g_x_old;
+            g_x_new = gradient_adaptive_disc_adaptive_function(x, imageKspaceData, alpha, gamma, imageKspaceMask);
+            if(sum(sum(abs(g_x_old))) > (sum(sum(abs(g_x_new)))))
+                tow = 1.1*tow;
+                x_old = x;
+            else
+                tow = 0.5*tow;
+                x = x_old;
+            end
+            optim_fn_iteration_variation = [optim_fn_iteration_variation; [iteration_count, sum(sum(abs(g_x_new)))]];
+            iteration_count = iteration_count + 1;
+        end
+        imwrite(abs(x), strcat('../Images/adap-prior-', num2str(gamma), num2str(alpha), '.png'), 'png');
+        fprintf('Number of iterations the gradient descent ran was %f \n', iteration_count);
+    end
+end
+adap_reconstructed = x;
+%%
+% We can verify from visual inspection that the optimal value of alpha is
+% 0.001 and for gammma it is 0.1. As above, gamma does not really affect
+% the quality of the reconstructed image, and the major contributor is the
+% alpha parameter.
+%%
+h=figure();
+plot(optim_fn_iteration_variation(2:end,1), optim_fn_iteration_variation(2:end,2));
+title('Variation of optimality criteria discontinuity adaptive prior(derivative of MAP)')
+xlabel('Number of iterations')
+ylabel('Value of optimality critera(that we want to minimise')
+saveas(h,'../Images/adap-prior-plot','png');
+%%
+h=figure('units','normalized','outerposition',[0 0 1 1]);
+title('All images compared')
+subplot(1,5,1), imshow(ifft2(imageKspaceData)), title('Inverse Fourier transform of data')
+subplot(1,5,2), imshow(abs(quad_reconstructed)), title('Reconstructed using Quadratic prior')
+subplot(1,5,3), imshow(abs(huber_reconstructed)), title('Reconstructed using Huber prior')
+subplot(1,5,4), imshow(abs(adap_reconstructed)), title('Reconstructed using Adaptive Function prior')
+subplot(1,5,5), colorbar
+saveas(h,'../Images/combined','png');
+##### SOURCE END #####
+--></body></html>

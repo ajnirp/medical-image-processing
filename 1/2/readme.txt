@@ -1,0 +1,1 @@
+There are four pdf reports inside the report/ subfolder, named 2a.pdf, 2b.pdf, 2c.pdf and choosing-a-filter.pdf

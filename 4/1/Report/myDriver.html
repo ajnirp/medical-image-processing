@@ -1,0 +1,326 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Segmenting a Brain Magnetic Resonance Image using Fuzzy C-Means</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-04-11"><meta name="DC.source" content="myDriver.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Segmenting a Brain Magnetic Resonance Image using Fuzzy C-Means</h1><p>Given a bias-corrupted and noise-corrupted magnitude-MRI of a brain, we want to segment the image into three classes, white matter, grey matter and cerebrospinal fluid</p><pre class="codeinput">clear <span class="string">all</span>
+load(<span class="string">'assignmentSegmentBrain.mat'</span>);
+
+brainData = imageData .* imageMask;
+<span class="comment">% imwrite(imageData, 'imageData.png', 'png');</span>
+<span class="comment">% imwrite(imageMask, 'brainMask.png', 'png');</span>
+<span class="comment">% imwrite(brainData, 'brainData.png', 'png');</span>
+[r, c] = size(brainData);
+bias = zeros(r, c);
+bias(:) = mean(mean(brainData));
+bias = bias .* imageMask;
+bias = 0.5 * bias / max(max(bias));
+bias = ones(r,c);
+</pre><p>Our motivation for initialising the class means was to pick a very approximate set of values quickly. So we simply used manual inspection: namely, we observed the intensity values at a few points in the image and visually determined the type of the tissue we were observing. We used the observed values as initial values of the class means</p><pre class="codeinput">class = [140; 100; 70];
+class = class / 255;
+</pre><p>Our motivation was to quickly initialise the membership values to sensible values. So given the class means, we simply measure the absolute difference of the pixel from each class mean, and use that as a rough measure of membership (after normalizing by dividing by the sum of the differences). As can be seen in the Images/ folder, we get very rough but workable approximations for the white matter and CSF tissue (although not for the grey matter tissue)</p><pre class="codeinput">memb = zeros(r,c,3);
+<span class="keyword">for</span> i =  1:r
+    <span class="keyword">for</span> j = 1:c
+        <span class="keyword">if</span> imageMask(i,j) == 0
+            <span class="keyword">continue</span>
+        <span class="keyword">end</span>
+        temp = (abs(brainData(i,j) - class)).^2;
+        memb(i,j,:) = temp / sum(temp);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+memb = 1 - memb;
+memb(:,:,1) = memb(:,:,1) .* imageMask;
+memb(:,:,2) = memb(:,:,2) .* imageMask;
+memb(:,:,3) = memb(:,:,3) .* imageMask;
+
+<span class="comment">% figure(1), imshow(memb(:,:,1));</span>
+<span class="comment">% figure(2), imshow(memb(:,:,2));</span>
+<span class="comment">% figure(3), imshow(memb(:,:,3));</span>
+imwrite(memb(:,:,1), <span class="string">'../Images/white-matter.png'</span>, <span class="string">'png'</span>);
+imwrite(memb(:,:,2), <span class="string">'../Images/grey-matter.png'</span>, <span class="string">'png'</span>);
+imwrite(memb(:,:,3), <span class="string">'../Images/cs-fluid.png'</span>, <span class="string">'png'</span>);
+</pre><pre class="codeinput">q = 2;
+w = 9; <span class="comment">% width of the window</span>
+hw = (w+1)/2; <span class="comment">% half-width</span>
+gauss = fspecial(<span class="string">'gaussian'</span>, [w w]);
+gauss(hw,hw) = 0; <span class="comment">% eliminate the centre mask</span>
+gauss = gauss / sum(sum(gauss));
+<span class="comment">% imshow(gauss);</span>
+imwrite(gauss, <span class="string">'../Images/neighbourhood-mask.png'</span>, <span class="string">'png'</span>);
+</pre><pre class="codeinput">dist = zeros([3 1]);
+</pre><p>Optimization via Lagrange multipliers using the methods discussed in the slides on Image Segmentation, specifically, slides 60, 62 and 63</p><pre class="codeinput">temp_memb = zeros(size(memb));
+temp_bias = zeros(size(bias));
+<span class="keyword">for</span> iter = 1:20
+    cl_numer = [0;0;0]; cl_denom = [0;0;0];
+    <span class="keyword">for</span> i = 1:r
+        <span class="keyword">for</span> j = 1:c
+            <span class="keyword">if</span> imageMask(i,j) ~= 0
+                <span class="comment">% update the d_kj values</span>
+                window = bias(i-hw+1:i+hw-1,j-hw+1:j+hw-1);
+                diff = (brainData(i,j) - class(1) .* window) .^ 2;
+                dist(1) = sum(sum(gauss .* diff));
+                diff = (brainData(i,j) - class(2) .* window) .^ 2;
+                dist(2) = sum(sum(gauss .* diff));
+                diff = (brainData(i,j) - class(3) .* window) .^ 2;
+                dist(3) = sum(sum(gauss .* diff));
+                <span class="comment">% update the membership variables u_jk</span>
+                powers = dist .^ ((-1)/(q-1));
+<span class="comment">%                 temp_memb(i,j,:) = powers ./ (powers(1) + powers(2) + powers(3));</span>
+                memb(i,j,:) = powers ./ (powers(1) + powers(2) + powers(3));
+
+                <span class="comment">% calculating the class means</span>
+                common_term = (memb(i,j,:) .^ q);
+                cl_numer = cl_numer + reshape(common_term .* (brainData(i,j) * sum(sum(gauss .* window))), [3 1]);
+                cl_denom = cl_denom + reshape(common_term .* (sum(sum(gauss .* (window .^ 2)))), [3 1]);
+
+                <span class="comment">% update the bias field</span>
+                common_term2 = reshape(common_term, [3 1]) .* class;
+                temp = sum(common_term2);
+
+<span class="comment">%                 bi_numer = sum(sum(window .* (brainData(i,j) * temp)));</span>
+                bi_numer = sum(sum(gauss .* (brainData(i,j) * temp)));
+                temp = sum(common_term2 .* class);
+
+<span class="comment">%                 bi_denom = sum(sum(window .* temp));</span>
+                bi_denom = sum(sum(gauss .* temp));
+<span class="comment">%                 temp_bias(i,j) = bi_numer / bi_denom;</span>
+                bias(i,j) = bi_numer / bi_denom;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    class = cl_numer ./ cl_denom;
+<span class="comment">%     bias = temp_bias;</span>
+<span class="comment">%     memb = temp_memb;</span>
+<span class="keyword">end</span>
+</pre><pre class="codeinput">biasRemoved = removeBias(memb, class);
+residual = residualImage(brainData, biasRemoved, bias);
+<span class="comment">% finalEstimate = finalClassEstimate(memb, class);</span>
+[r c] = size(memb(:,:,1));
+finalEstimate = zeros([r c]);
+<span class="keyword">for</span> i = 1:r
+    <span class="keyword">for</span> j = 1:c
+        <span class="keyword">if</span> imageMask(i,j) ~= 0
+            membs = memb(i,j,:);
+            assigned = find(membs == max(membs));
+            finalEstimate(i,j) = class(assigned);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeinput">h=figure(<span class="string">'units'</span>,<span class="string">'normalized'</span>,<span class="string">'outerposition'</span>,[0 0 1 1]);
+title(<span class="string">'All images compared'</span>)
+subplot(1,5,1), imshow(imageData), title(<span class="string">'Corrupted image'</span>)
+subplot(1,5,2), imshow(finalEstimate), title(<span class="string">'Membership estimates'</span>)
+subplot(1,5,3), imshow(bias), title(<span class="string">'Bias-field estimate'</span>)
+subplot(1,5,4), imshow(biasRemoved), title(<span class="string">'Bias-removed image'</span>)
+subplot(1,5,5), imshow(residual), title(<span class="string">'Residual image'</span>)
+saveas(h,<span class="string">'../Images/combined'</span>,<span class="string">'png'</span>);
+</pre><img vspace="5" hspace="5" src="myDriver_01.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Segmenting a Brain Magnetic Resonance Image using Fuzzy C-Means
+% Given a biass-corrupted and noise-corrupted magnitude-MRI of a brain, we
+% want to segment the image into three classes, white matter, grey matter
+% and cerebrospinal fluid
+clear all
+load('assignmentSegmentBrain.mat');
+
+brainData = imageData .* imageMask;
+% imwrite(imageData, 'imageData.png', 'png');
+% imwrite(imageMask, 'brainMask.png', 'png');
+% imwrite(brainData, 'brainData.png', 'png');
+[r, c] = size(brainData);
+bias = zeros(r, c);
+bias(:) = mean(mean(brainData));
+bias = bias .* imageMask;
+bias = 0.5 * bias / max(max(bias));
+bias = ones(r,c);
+%%
+% Our motivation for initialising the class means was to pick a very
+% approximate set of values quickly. So we simply used manual inspection:
+% namely, we observed the intensity values at a few points in the image and
+% visually determined the type of the tissue we were observing. We used the
+% observed values as initial values of the class means
+%
+class = [140; 100; 70];
+class = class / 255;
+%%
+% Our motivation was to quickly initialise the membership values to
+% sensible values. So given the class means, we simply measure the absolute
+% difference of the pixel from each class mean, and use that as a rough
+% measure of membership (after normalizing by dividing by the sum of the
+% differences). As can be seen in the Images/ folder, we get very rough but
+% workable approximations for the white matter and CSF tissue (although not
+% for the grey matter tissue)
+%
+memb = zeros(r,c,3);
+for i =  1:r
+    for j = 1:c
+        if imageMask(i,j) == 0
+            continue
+        end
+        temp = (abs(brainData(i,j) - class)).^2;
+        memb(i,j,:) = temp / sum(temp);
+    end
+end
+
+memb = 1 - memb;
+memb(:,:,1) = memb(:,:,1) .* imageMask;
+memb(:,:,2) = memb(:,:,2) .* imageMask;
+memb(:,:,3) = memb(:,:,3) .* imageMask;
+
+% figure(1), imshow(memb(:,:,1));
+% figure(2), imshow(memb(:,:,2));
+% figure(3), imshow(memb(:,:,3));
+imwrite(memb(:,:,1), '../Images/white-matter.png', 'png');
+imwrite(memb(:,:,2), '../Images/grey-matter.png', 'png');
+imwrite(memb(:,:,3), '../Images/cs-fluid.png', 'png');
+%%
+q = 2;
+w = 9; % width of the window
+hw = (w+1)/2; % half-width
+gauss = fspecial('gaussian', [w w]);
+gauss(hw,hw) = 0; % eliminate the centre mask
+gauss = gauss / sum(sum(gauss));
+% imshow(gauss);
+imwrite(gauss, '../Images/neighbourhood-mask.png', 'png');
+%%
+dist = zeros([3 1]);
+%%
+% Optimization via Lagrange multipliers using the methods discussed in the
+% slides on Image Segmentation, specifically, slides 60, 62 and 63
+temp_memb = zeros(size(memb));
+temp_bias = zeros(size(bias));
+for iter = 1:20
+    cl_numer = [0;0;0]; cl_denom = [0;0;0];
+    for i = 1:r
+        for j = 1:c
+            if imageMask(i,j) ~= 0
+                % update the d_kj values
+                window = bias(i-hw+1:i+hw-1,j-hw+1:j+hw-1);
+                diff = (brainData(i,j) - class(1) .* window) .^ 2;
+                dist(1) = sum(sum(gauss .* diff));
+                diff = (brainData(i,j) - class(2) .* window) .^ 2;
+                dist(2) = sum(sum(gauss .* diff));
+                diff = (brainData(i,j) - class(3) .* window) .^ 2;
+                dist(3) = sum(sum(gauss .* diff));
+                % update the membership variables u_jk
+                powers = dist .^ ((-1)/(q-1));
+%                 temp_memb(i,j,:) = powers ./ (powers(1) + powers(2) + powers(3));
+                memb(i,j,:) = powers ./ (powers(1) + powers(2) + powers(3));
+                
+                % calculating the class means
+                common_term = (memb(i,j,:) .^ q);
+                cl_numer = cl_numer + reshape(common_term .* (brainData(i,j) * sum(sum(gauss .* window))), [3 1]);
+                cl_denom = cl_denom + reshape(common_term .* (sum(sum(gauss .* (window .^ 2)))), [3 1]);
+                
+                % update the bias field
+                common_term2 = reshape(common_term, [3 1]) .* class;
+                temp = sum(common_term2);
+                
+%                 bi_numer = sum(sum(window .* (brainData(i,j) * temp)));
+                bi_numer = sum(sum(gauss .* (brainData(i,j) * temp)));
+                temp = sum(common_term2 .* class);
+                
+%                 bi_denom = sum(sum(window .* temp));
+                bi_denom = sum(sum(gauss .* temp));
+%                 temp_bias(i,j) = bi_numer / bi_denom;
+                bias(i,j) = bi_numer / bi_denom;
+            end
+        end
+    end
+    class = cl_numer ./ cl_denom;
+%     bias = temp_bias;
+%     memb = temp_memb;
+end
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-Check if somewhere else we have comfused the gauss with the bias
+% field(basically w with bREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+
+%%
+biasRemoved = removeBias(memb, class);
+residual = residualImage(brainData, biasRemoved, bias);
+% finalEstimate = finalClassEstimate(memb, class);
+[r c] = size(memb(:,:,1));
+finalEstimate = zeros([r c]);
+for i = 1:r
+    for j = 1:c
+        if imageMask(i,j) ~= 0
+            membs = memb(i,j,:);
+            assigned = find(membs == max(membs));
+            finalEstimate(i,j) = class(assigned);
+        end
+    end
+end
+%%
+h=figure('units','normalized','outerposition',[0 0 1 1]);
+title('All images compared')
+subplot(1,5,1), imshow(imageData), title('Corrupted image')
+subplot(1,5,2), imshow(finalEstimate), title('Membership estimates')
+subplot(1,5,3), imshow(bias), title('Bias-field estimate')
+subplot(1,5,4), imshow(biasRemoved), title('Bias-removed image')
+subplot(1,5,5), imshow(residual), title('Residual image')
+saveas(h,'../Images/combined','png');
+##### SOURCE END #####
+--></body></html>
